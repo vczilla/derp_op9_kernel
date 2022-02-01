@@ -8860,6 +8860,7 @@ unsigned int dsi_panel_get_refresh_rate(void)
 {
 	return READ_ONCE(cur_refresh_rate);
 }
+EXPORT_SYMBOL(dsi_panel_get_refresh_rate);
 
 int dsi_display_enable(struct dsi_display *display)
 {
