@@ -477,16 +477,15 @@ static int bq27541_get_battery_mvolts(void)
 	}
 }
 
-// Get battery time to full in seconds
-//
-// Note, the IC returns TTF in minutes, so we must multiply the return val
-// 0 return = battery full
-// -1 return = let Android HAL handle this calculation, may be less accurate
-// any other positive int = seconds until full
+/*
+ * Return remaining time in seconds until the battery is fully charged
+ * Or < 0 if something fails.
+ */
+
 static int bq27541_get_battery_ttf(void)
 {
 	int ret = 0;
-	int ttf_mins = 0;
+	int val = 0;
 
 	if (!gauge_ic) {
 		return -1;
@@ -500,16 +499,16 @@ static int bq27541_get_battery_ttf(void)
 	}
 
 	if (atomic_read(&gauge_ic->suspended) != 1) {
-		ret = bq27541_read_i2c(gauge_ic->cmd_addr.reg_ttf, &ttf_mins);
+		ret = bq27541_read_i2c(gauge_ic->cmd_addr.reg_ttf, &val);
 		if (ret) {
 			dev_err(gauge_ic->dev, "error reading time to full, ret:%d\n", ret);
 			return -1;
 		} else {
 			// Multiply to handle mins -> secs
-			gauge_ic->ttf_pre = ttf_mins * 60;
+			gauge_ic->ttf_pre = val * 60;
 			// Datasheet states a return of 65535 indicates the battery is
 			// not being charged. Lower-bounds check in case of I2C glitches
-			if (ttf_mins < 65535 && ttf_mins >= 0) {
+			if (val < 65535 && val >= 0) {
 				return gauge_ic->ttf_pre;
 			} else {
 				return -1;
